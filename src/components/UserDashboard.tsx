@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LicenceRecord, RenewalReminder } from '../types/licence';
+import { LicenceRecord, RenewalReminder, AssistanceCase } from '../types/licence';
 import { 
   Bookmark, 
   Bell, 
@@ -13,7 +13,15 @@ import {
   ArrowRight,
   ExternalLink,
   ShieldCheck,
-  Download
+  Download,
+  FileCheck2,
+  Sparkles,
+  User,
+  Phone,
+  Copy,
+  Check,
+  MapPin,
+  IndianRupee
 } from 'lucide-react';
 
 interface UserDashboardProps {
@@ -26,6 +34,11 @@ interface UserDashboardProps {
   reminders: RenewalReminder[];
   onAddReminder: (reminder: Omit<RenewalReminder, 'id' | 'createdAt'>) => void;
   onDeleteReminder: (reminderId: string) => void;
+  activeCases?: AssistanceCase[];
+  onDeleteCase?: (caseId: string) => void;
+  onOpenAssistanceModal?: (licence?: LicenceRecord) => void;
+  onStartVerification?: (caseItem: AssistanceCase) => void;
+  onOpenQuoteAndDossier?: (caseItem: AssistanceCase) => void;
 }
 
 export const UserDashboard: React.FC<UserDashboardProps> = ({
@@ -38,8 +51,22 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   reminders,
   onAddReminder,
   onDeleteReminder,
+  activeCases = [],
+  onDeleteCase,
+  onOpenAssistanceModal,
+  onStartVerification,
+  onOpenQuoteAndDossier,
 }) => {
-  const [activeTab, setActiveTab] = useState<'saved' | 'reminders' | 'new-reminder'>('saved');
+  const [activeTab, setActiveTab] = useState<'cases' | 'saved' | 'reminders' | 'new-reminder'>(
+    activeCases.length > 0 ? 'cases' : 'saved'
+  );
+  const [copiedCaseId, setCopiedCaseId] = useState<string | null>(null);
+
+  const handleCopyId = (id: string) => {
+    navigator.clipboard.writeText(id);
+    setCopiedCaseId(id);
+    setTimeout(() => setCopiedCaseId(null), 2000);
+  };
 
   // New reminder form state
   const [selectedLicenceId, setSelectedLicenceId] = useState<string>(
@@ -139,6 +166,21 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
         <div className="bg-slate-50 px-6 py-2 border-b border-slate-200 flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-1">
             <button
+              onClick={() => setActiveTab('cases')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                activeTab === 'cases'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <FileCheck2 className="w-3.5 h-3.5 text-teal-600" />
+              <span>Assistance Cases ({activeCases.length})</span>
+              {activeCases.length > 0 && (
+                <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
+              )}
+            </button>
+
+            <button
               onClick={() => setActiveTab('saved')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
                 activeTab === 'saved'
@@ -165,11 +207,19 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
 
           <div className="flex items-center gap-2">
             <button
+              onClick={() => onOpenAssistanceModal?.()}
+              className="inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs font-semibold rounded-lg transition-all shadow-xs"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-emerald-200" />
+              <span>New Case</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('new-reminder')}
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Add Reminder</span>
+              <span>Reminder</span>
             </button>
 
             <button
@@ -185,6 +235,193 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
           
+          {/* TAB 0: ASSISTANCE CASES (NEW MANAGED CASES) */}
+          {activeTab === 'cases' && (
+            <div>
+              <div className="mb-4 p-3 bg-teal-50/70 border border-teal-200/80 rounded-xl text-xs text-teal-900 flex items-start gap-2.5">
+                <Sparkles className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
+                <p>
+                  <strong className="font-semibold">Managed Assistance Pilot:</strong> Cases here track your document validation, quotation, and coordination. Step 1 checkpoint is verified for each active case.
+                </p>
+              </div>
+
+              {activeCases.length > 0 ? (
+                <div className="space-y-4">
+                  {activeCases.map((c) => {
+                    const matchedLicence = allLicences.find((l) => l.id === c.licenceId);
+                    return (
+                      <div
+                        key={c.id}
+                        className="p-5 bg-white border border-slate-200 rounded-xl shadow-xs hover:border-slate-300 transition-all space-y-3"
+                      >
+                        {/* Top Row: Case ID, Status & Delete */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100 text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-slate-900 text-sm tracking-wide">
+                              {c.id}
+                            </span>
+                            <button
+                              onClick={() => handleCopyId(c.id)}
+                              className="text-slate-400 hover:text-slate-700 p-1 rounded"
+                              title="Copy Case ID"
+                            >
+                              {copiedCaseId === c.id ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                            <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                              ● Checkpoint Verified
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-slate-400">
+                            <span className="text-[11px]">
+                              Created: {new Date(c.createdAt).toLocaleDateString()}
+                            </span>
+                            {onDeleteCase && (
+                              <button
+                                onClick={() => onDeleteCase(c.id)}
+                                className="p-1 hover:text-red-600 rounded transition-colors"
+                                title="Cancel / Remove Case"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Middle Row: Licence & Customer Details */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <span className="text-slate-400 block text-[11px]">Service & Category</span>
+                            <button
+                              onClick={() => {
+                                if (matchedLicence) {
+                                  onSelectLicence(matchedLicence);
+                                  onClose();
+                                }
+                              }}
+                              className="font-bold text-slate-900 hover:text-teal-700 text-sm text-left inline-flex items-center gap-1 group"
+                            >
+                              <span>{c.licenceName}</span>
+                              <ArrowRight className="w-3 h-3 text-slate-400 group-hover:text-teal-600 group-hover:translate-x-0.5 transition-transform" />
+                            </button>
+                            <div className="text-slate-500 text-[11px] mt-0.5">
+                              {c.applicationKind} Application · {c.applicantType}
+                            </div>
+                          </div>
+
+                          <div className="space-y-0.5">
+                            <span className="text-slate-400 block text-[11px]">Applicant Details</span>
+                            <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                              <User className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{c.customerName}</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-slate-500 text-[11px]">
+                              <span className="flex items-center gap-1 font-mono">
+                                <Phone className="w-3 h-3 text-slate-400" />
+                                <span>+91 {c.phone}</span>
+                              </span>
+                              <span>·</span>
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-slate-400" />
+                                <span>{c.district}, {c.state}</span>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Bottom Row: Checkpoints & Next Action */}
+                        <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+                          <div className="flex items-center gap-2 text-slate-600 text-[11px]">
+                            <span className="flex items-center gap-1 text-emerald-700 font-semibold">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Govt ID Checkpoint Passed</span>
+                            </span>
+                            <span>·</span>
+                            <span>Est Govt Fee: <strong>{c.statutoryGovtFeeEst}</strong></span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            {(() => {
+                              const mandatoryDocs = c.documents.filter((d) => d.isMandatory);
+                              const verifiedDocs = mandatoryDocs.filter((d) => d.status === 'verified');
+                              const allDone = mandatoryDocs.length > 0 && verifiedDocs.length === mandatoryDocs.length;
+
+                              return (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      onClose();
+                                      onStartVerification?.(c);
+                                    }}
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs ${
+                                      allDone
+                                        ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300'
+                                        : 'bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200'
+                                    }`}
+                                  >
+                                    <Sparkles className={`w-3.5 h-3.5 ${allDone ? 'text-emerald-700' : 'text-teal-600'}`} />
+                                    <span>
+                                      {allDone
+                                        ? 'Docs Verified (100%)'
+                                        : `Verify Docs (${verifiedDocs.length}/${mandatoryDocs.length})`}
+                                    </span>
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      onClose();
+                                      onOpenQuoteAndDossier?.(c);
+                                    }}
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs ${
+                                      c.quote?.status === 'paid'
+                                        ? 'bg-slate-900 hover:bg-slate-800 text-white'
+                                        : allDone
+                                        ? 'bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white'
+                                        : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
+                                    }`}
+                                  >
+                                    <IndianRupee className="w-3.5 h-3.5" />
+                                    <span>
+                                      {c.quote?.status === 'paid'
+                                        ? 'Portal Dossier'
+                                        : 'Quote & Dossier (Step 3)'}
+                                    </span>
+                                    <ArrowRight className="w-3 h-3" />
+                                  </button>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
+
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-12 max-w-sm mx-auto">
+                  <div className="w-12 h-12 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center mx-auto mb-3">
+                    <FileCheck2 className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900">No active assistance cases yet</h3>
+                  <p className="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">
+                    Need help filing a driving licence, FSSAI food permit, GST, or trade licence? Start an assisted application with AI pre-verification.
+                  </p>
+                  <button
+                    onClick={() => onOpenAssistanceModal?.()}
+                    className="px-4 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs"
+                  >
+                    Start an Assisted Case
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* TAB 1: SAVED LICENCES */}
           {activeTab === 'saved' && (
             <div>

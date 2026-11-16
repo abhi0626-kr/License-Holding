@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LICENCES } from './data/licences';
-import { LicenceRecord, LicenceCategory, RenewalReminder, VerificationStatus } from './types/licence';
+import { LicenceRecord, LicenceCategory, RenewalReminder, VerificationStatus, AssistanceCase } from './types/licence';
 import { Navbar } from './components/Navbar';
 import { DisclaimerBanner } from './components/DisclaimerBanner';
 import { Hero } from './components/Hero';
@@ -15,6 +15,9 @@ import { UserDashboard } from './components/UserDashboard';
 import { OfficialSourceDirectoryView } from './components/OfficialSourceDirectoryView';
 import { AdminPanel } from './components/AdminPanel';
 import { ReportErrorModal } from './components/ReportErrorModal';
+import { AssistanceCaseModal } from './components/AssistanceCaseModal';
+import { DocumentVerificationModal } from './components/DocumentVerificationModal';
+import { QuotationAndDossierModal } from './components/QuotationAndDossierModal';
 import { HowItWorks } from './components/HowItWorks';
 import { RecentUpdates } from './components/RecentUpdates';
 import { Footer } from './components/Footer';
@@ -46,7 +49,60 @@ export function App() {
   const [isReportErrorOpen, setIsReportErrorOpen] = useState<boolean>(false);
   const [reportErrorLicence, setReportErrorLicence] = useState<LicenceRecord | null>(null);
 
-  // User Local Storage Persistence: Saved licences & Reminders
+  // Assistance Case Modal State (Step 1 Managed Flow)
+  const [isAssistanceModalOpen, setIsAssistanceModalOpen] = useState<boolean>(false);
+  const [assistanceLicence, setAssistanceLicence] = useState<LicenceRecord | null>(null);
+
+  // Document Verification Workspace State (Step 2 AI Vision Agent)
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState<boolean>(false);
+  const [verificationCase, setVerificationCase] = useState<AssistanceCase | null>(null);
+
+  // Quotation & Application Dossier State (Step 3 Commercials & Copilot)
+  const [isQuoteDossierOpen, setIsQuoteDossierOpen] = useState<boolean>(false);
+  const [quoteDossierCase, setQuoteDossierCase] = useState<AssistanceCase | null>(null);
+
+  // User Local Storage Persistence: Saved licences, Reminders & Active Cases
+  const [activeCases, setActiveCases] = useState<AssistanceCase[]>(() => {
+    try {
+      const stored = localStorage.getItem('lh_active_cases');
+      if (stored) return JSON.parse(stored);
+      // Sample starter case for demonstration in Karnataka pilot
+      return [
+        {
+          id: 'CASE-KA-DL-2026-1042',
+          licenceId: 'learners-driving-licence',
+          licenceName: "Learner's Driving Licence (LLR)",
+          licenceCategory: 'driving-transport',
+          customerName: 'Ananya Sharma',
+          phone: '9845012345',
+          email: 'ananya.s@example.com',
+          state: 'Karnataka',
+          district: 'Bengaluru Urban',
+          pincode: '560034',
+          applicantType: 'Individual',
+          applicationKind: 'New',
+          status: 'initialized',
+          statutoryGovtFeeEst: '₹150 to ₹200 (Parivahan Sarathi)',
+          estimatedDuration: '7 to 15 working days',
+          documents: [
+            { docRequirementId: 'aadhaar-card', name: 'Aadhaar Card with linked mobile', isMandatory: true, status: 'pending' },
+            { docRequirementId: 'age-proof', name: 'Age Proof (Birth Certificate / 10th Marks Card)', isMandatory: true, status: 'pending' },
+            { docRequirementId: 'form-1', name: 'Form 1 Self-Declaration of Physical Fitness', isMandatory: true, status: 'pending' }
+          ],
+          confirmedCheckpoints: {
+            nameMatchesAadhaar: true,
+            acknowledgedGovtAuthority: true,
+            contactConfirmed: true
+          },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+    } catch {
+      return [];
+    }
+  });
+
   const [savedLicenceIds, setSavedLicenceIds] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem('lh_saved_licences');
@@ -99,6 +155,53 @@ export function App() {
       console.error(e);
     }
   }, [reminders]);
+
+  // Sync active cases to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('lh_active_cases', JSON.stringify(activeCases));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [activeCases]);
+
+  const handleRequestAssistance = (licence: LicenceRecord) => {
+    setAssistanceLicence(licence);
+    setIsAssistanceModalOpen(true);
+  };
+
+  const handleCaseCreated = (newCase: AssistanceCase) => {
+    setActiveCases((prev) => [newCase, ...prev]);
+    setIsAssistanceModalOpen(false);
+    setIsDashboardOpen(true);
+  };
+
+  const handleDeleteCase = (caseId: string) => {
+    setActiveCases((prev) => prev.filter((c) => c.id !== caseId));
+    fetch(`/api/cases/${caseId}`, { method: 'DELETE' }).catch(() => {});
+  };
+
+  const handleStartVerification = (caseItem: AssistanceCase) => {
+    setVerificationCase(caseItem);
+    setIsVerificationModalOpen(true);
+  };
+
+  const handleUpdateCase = (updatedCase: AssistanceCase) => {
+    setActiveCases((prev) =>
+      prev.map((c) => (c.id === updatedCase.id ? updatedCase : c))
+    );
+    if (verificationCase && verificationCase.id === updatedCase.id) {
+      setVerificationCase(updatedCase);
+    }
+    if (quoteDossierCase && quoteDossierCase.id === updatedCase.id) {
+      setQuoteDossierCase(updatedCase);
+    }
+  };
+
+  const handleOpenQuoteAndDossier = (caseItem: AssistanceCase) => {
+    setQuoteDossierCase(caseItem);
+    setIsQuoteDossierOpen(true);
+  };
 
   const handleToggleSave = (licenceId: string) => {
     setSavedLicenceIds((prev) =>
@@ -224,6 +327,7 @@ export function App() {
         onOpenAdmin={() => setIsAdminOpen(true)}
         savedCount={savedLicenceIds.length}
         remindersCount={reminders.length}
+        activeCasesCount={activeCases.length}
       />
 
       {/* 3. Main Content Router */}
@@ -521,6 +625,7 @@ export function App() {
             }}
             onOpenAIWithContext={(id) => handleOpenAI(id, selectedLicence.name)}
             onReportError={handleReportError}
+            onRequestAssistance={handleRequestAssistance}
           />
         )}
 
@@ -545,7 +650,7 @@ export function App() {
         contextLicenceName={aiContextLicence.name}
       />
 
-      {/* MODAL 2: User Dashboard & Reminders */}
+      {/* MODAL 2: User Dashboard, Cases & Reminders */}
       <UserDashboard
         isOpen={isDashboardOpen}
         onClose={() => setIsDashboardOpen(false)}
@@ -556,6 +661,11 @@ export function App() {
         reminders={reminders}
         onAddReminder={handleAddReminder}
         onDeleteReminder={handleDeleteReminder}
+        activeCases={activeCases}
+        onDeleteCase={handleDeleteCase}
+        onOpenAssistanceModal={(lic) => handleRequestAssistance(lic || selectedLicence || licences[0])}
+        onStartVerification={handleStartVerification}
+        onOpenQuoteAndDossier={handleOpenQuoteAndDossier}
       />
 
       {/* MODAL 3: Admin Review Panel */}
@@ -571,6 +681,36 @@ export function App() {
         isOpen={isReportErrorOpen}
         onClose={() => setIsReportErrorOpen(false)}
         licence={reportErrorLicence}
+      />
+
+      {/* MODAL 5: Assistance Case Modal (Step 1 Intake & Checkpoint) */}
+      <AssistanceCaseModal
+        isOpen={isAssistanceModalOpen}
+        onClose={() => setIsAssistanceModalOpen(false)}
+        selectedLicence={assistanceLicence}
+        allLicences={licences}
+        onCaseCreated={handleCaseCreated}
+        onStartVerification={handleStartVerification}
+      />
+
+      {/* MODAL 6: AI Multi-Modal Document Verification Workspace (Step 2) */}
+      <DocumentVerificationModal
+        isOpen={isVerificationModalOpen}
+        onClose={() => setIsVerificationModalOpen(false)}
+        caseItem={verificationCase}
+        onUpdateCase={handleUpdateCase}
+        onProceedToStep3={(c) => {
+          setIsVerificationModalOpen(false);
+          handleOpenQuoteAndDossier(c);
+        }}
+      />
+
+      {/* MODAL 7: AI Quotation Engine & Official Portal Dossier (Step 3) */}
+      <QuotationAndDossierModal
+        isOpen={isQuoteDossierOpen}
+        onClose={() => setIsQuoteDossierOpen(false)}
+        caseItem={quoteDossierCase}
+        onUpdateCase={handleUpdateCase}
       />
 
     </div>

@@ -183,3 +183,118 @@ export interface UserCorrectionReport {
   submittedAt: string;
   status: 'Pending' | 'Reviewed' | 'Resolved';
 }
+
+export type CaseStatus =
+  | 'initialized'           // Case created, checkpoint verified
+  | 'documents_pending'     // Waiting for user to upload documents
+  | 'documents_uploaded'    // Documents uploaded, AI verification in progress
+  | 'documents_verified'    // All mandatory docs verified by AI
+  | 'quoted'                // Itemized quote issued
+  | 'quote_accepted'        // Customer accepted quote
+  | 'assigned'              // Assigned to human field agent / operator
+  | 'in_progress'           // Processing on official government portal
+  | 'completed';            // Licence delivered / closed
+
+export interface DocumentVerificationReport {
+  verdict: 'VERIFIED' | 'ACTION_REQUIRED' | 'REJECTED';
+  isAccepted: boolean;
+  confidenceScore: number;
+  detectedDocumentType: string;
+  extractedName: string;
+  nameMatchScore: number;
+  nameMatchNotes?: string;
+  maskedDocumentNumber?: string | null;
+  legibilityRating: 'High' | 'Medium' | 'Low';
+  issues?: string[];
+  actionableAdvice?: string;
+  extractedDetails?: {
+    dobOrAge?: string | null;
+    addressOrDistrict?: string | null;
+    documentDate?: string | null;
+  };
+}
+
+export interface CaseDocumentItem {
+  docRequirementId: string;
+  name: string;
+  isMandatory: boolean;
+  status: 'pending' | 'uploaded' | 'verified' | 'rejected';
+  fileName?: string;
+  fileData?: string; // base64 or preview url
+  mimeType?: string;
+  rejectionReason?: string;
+  verificationDetails?: DocumentVerificationReport;
+}
+
+export interface CaseQuote {
+  quoteId: string;
+  statutoryGovtFee: number;
+  statutoryFeeBreakdown: { particular: string; amount: number }[];
+  assistanceFee: number;
+  taxes: number; // 18% GST on assistance fee
+  totalPayable: number;
+  currency: string;
+  scopeIncluded: string[];
+  scopeExcluded: string[];
+  status: 'pending' | 'accepted' | 'paid';
+  paymentReference?: string;
+  issuedAt: string;
+  acceptedAt?: string;
+}
+
+export interface ApplicationDossier {
+  dossierId: string;
+  caseId: string;
+  generatedAt: string;
+  targetPortal: string;
+  targetPortalUrl: string;
+  applicantSummary: {
+    legalName: string;
+    contactNumber: string;
+    email?: string;
+    state: string;
+    district: string;
+    entityType: string;
+    applicationKind: string;
+  };
+  verifiedDocuments: {
+    docName: string;
+    detectedType: string;
+    maskedId: string;
+    matchScore: number;
+    verifiedAt: string;
+  }[];
+  portalFormPayload: Record<string, string | number>;
+  filingChecklist: string[];
+  operatorInstructions: string;
+}
+
+export interface AssistanceCase {
+  id: string; // e.g. "CASE-KA-DL-1042"
+  licenceId: string;
+  licenceName: string;
+  licenceCategory: LicenceCategory;
+  customerName: string;
+  phone: string;
+  email?: string;
+  state: string; // e.g. "Karnataka"
+  district: string; // e.g. "Bengaluru Urban"
+  pincode?: string;
+  applicantType: ApplicantType;
+  applicationKind: 'New' | 'Renewal' | 'Modification' | 'Correction' | 'Duplicate';
+  status: CaseStatus;
+  statutoryGovtFeeEst: string;
+  estimatedDuration: string;
+  documents: CaseDocumentItem[];
+  notes?: string;
+  quote?: CaseQuote;
+  dossier?: ApplicationDossier;
+  confirmedCheckpoints: {
+    nameMatchesAadhaar: boolean;
+    acknowledgedGovtAuthority: boolean;
+    contactConfirmed: boolean;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+

@@ -36,6 +36,7 @@ interface LicenceDetailProps {
   onAddReminder: (licence: LicenceRecord) => void;
   onOpenAIWithContext: (licenceId: string) => void;
   onReportError: (licence: LicenceRecord) => void;
+  onRequestAssistance: (licence: LicenceRecord) => void;
 }
 
 export const LicenceDetail: React.FC<LicenceDetailProps> = ({
@@ -48,6 +49,7 @@ export const LicenceDetail: React.FC<LicenceDetailProps> = ({
   onAddReminder,
   onOpenAIWithContext,
   onReportError,
+  onRequestAssistance,
 }) => {
   // Document checklist local ready states
   const [checkedDocs, setCheckedDocs] = useState<Record<string, boolean>>({});
@@ -208,14 +210,22 @@ export const LicenceDetail: React.FC<LicenceDetailProps> = ({
             </div>
           </div>
 
-          {/* Primary Action Row: Apply on Official Portal + Ask AI */}
+          {/* Primary Action Row: Start Assisted Application + Apply on Official Portal + Ask AI */}
           <div className="flex flex-wrap items-center gap-3">
             <button
+              onClick={() => onRequestAssistance(licence)}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-lg transform active:scale-98"
+            >
+              <Sparkles className="w-4 h-4 text-emerald-200" />
+              <span>Start Assisted Application (with AI Mitra)</span>
+            </button>
+
+            <button
               onClick={() => setShowPortalWarningModal(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-xl transition-colors shadow-xs"
+              className="inline-flex items-center gap-2 px-5 py-3 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 text-sm font-bold rounded-xl transition-colors shadow-xs"
             >
               <span>Apply on Official Portal</span>
-              <ExternalLink className="w-4 h-4" />
+              <ExternalLink className="w-4 h-4 text-slate-500" />
             </button>
 
             <button
@@ -223,7 +233,7 @@ export const LicenceDetail: React.FC<LicenceDetailProps> = ({
               className="inline-flex items-center gap-2 px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-xs"
             >
               <Sparkles className="w-4 h-4 text-teal-400" />
-              <span>Ask Mitra About This Licence</span>
+              <span>Ask Mitra</span>
             </button>
           </div>
 
@@ -407,8 +417,32 @@ export const LicenceDetail: React.FC<LicenceDetailProps> = ({
               })}
             </div>
 
+            {/* AI Document Pre-Screening CTA Banner */}
+            <div className="mt-5 p-4 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200/90 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-teal-100 rounded-lg text-teal-700 shrink-0 mt-0.5">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-teal-950">
+                    Need an AI Agent to verify these documents before you apply?
+                  </h4>
+                  <p className="text-[11px] text-teal-800 mt-0.5 leading-relaxed">
+                    Our managed assistant checks your documents for legibility, name spelling matches, and official portal readiness.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => onRequestAssistance(licence)}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-lg transition-colors shrink-0 shadow-xs"
+              >
+                <span>Start Assisted Case</span>
+                <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
+              </button>
+            </div>
+
             <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 italic">
-              Note: Marking a document as ready saves your progress locally for reference. Licence Holding does not collect or upload your identity documents.
+              Note: Marking a document as ready saves your progress locally for reference. You can also start an Assisted Case for managed filing.
             </div>
           </div>
 

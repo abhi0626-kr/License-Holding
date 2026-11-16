@@ -21,6 +21,7 @@ interface NavbarProps {
   onOpenAdmin: () => void;
   savedCount: number;
   remindersCount: number;
+  activeCasesCount?: number;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -31,6 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAdmin,
   savedCount,
   remindersCount,
+  activeCasesCount = 0,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -102,17 +104,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>Ask Licence Mitra</span>
             </button>
 
-            {/* User Dashboard / Saved items */}
+            {/* User Dashboard / Saved items & Cases */}
             <button
               onClick={onOpenDashboard}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-700 hover:bg-slate-100 border border-slate-200 transition-colors whitespace-nowrap shrink-0 relative"
-              title="View Saved Licences & Reminders"
+              title="View Active Cases, Saved Licences & Reminders"
             >
               <Bookmark className="w-3.5 h-3.5 text-slate-600" />
               <span>My Dashboard</span>
-              {(savedCount > 0 || remindersCount > 0) && (
-                <span className="ml-1 px-1.5 py-0.2 bg-teal-600 text-white text-[10px] font-bold rounded-full">
-                  {savedCount + remindersCount}
+              {(savedCount > 0 || remindersCount > 0 || activeCasesCount > 0) && (
+                <span className={`ml-1 px-1.5 py-0.2 text-white text-[10px] font-bold rounded-full ${
+                  activeCasesCount > 0 ? 'bg-emerald-600' : 'bg-teal-600'
+                }`}>
+                  {savedCount + remindersCount + activeCasesCount}
                 </span>
               )}
             </button>
