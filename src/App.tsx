@@ -18,6 +18,7 @@ import { ReportErrorModal } from './components/ReportErrorModal';
 import { AssistanceCaseModal } from './components/AssistanceCaseModal';
 import { DocumentVerificationModal } from './components/DocumentVerificationModal';
 import { QuotationAndDossierModal } from './components/QuotationAndDossierModal';
+import { OperatorWorkspaceModal } from './components/OperatorWorkspaceModal';
 import { HowItWorks } from './components/HowItWorks';
 import { RecentUpdates } from './components/RecentUpdates';
 import { Footer } from './components/Footer';
@@ -60,6 +61,9 @@ export function App() {
   // Quotation & Application Dossier State (Step 3 Commercials & Copilot)
   const [isQuoteDossierOpen, setIsQuoteDossierOpen] = useState<boolean>(false);
   const [quoteDossierCase, setQuoteDossierCase] = useState<AssistanceCase | null>(null);
+
+  // Operations Lead & Field Agent Workspace State (Operator Console)
+  const [isOperatorWorkspaceOpen, setIsOperatorWorkspaceOpen] = useState<boolean>(false);
 
   // User Local Storage Persistence: Saved licences, Reminders & Active Cases
   const [activeCases, setActiveCases] = useState<AssistanceCase[]>(() => {
@@ -325,6 +329,7 @@ export function App() {
         onOpenAI={() => handleOpenAI()}
         onOpenDashboard={() => setIsDashboardOpen(true)}
         onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenOperatorWorkspace={() => setIsOperatorWorkspaceOpen(true)}
         savedCount={savedLicenceIds.length}
         remindersCount={reminders.length}
         activeCasesCount={activeCases.length}
@@ -666,6 +671,7 @@ export function App() {
         onOpenAssistanceModal={(lic) => handleRequestAssistance(lic || selectedLicence || licences[0])}
         onStartVerification={handleStartVerification}
         onOpenQuoteAndDossier={handleOpenQuoteAndDossier}
+        onOpenOperatorWorkspace={() => setIsOperatorWorkspaceOpen(true)}
       />
 
       {/* MODAL 3: Admin Review Panel */}
@@ -711,6 +717,15 @@ export function App() {
         onClose={() => setIsQuoteDossierOpen(false)}
         caseItem={quoteDossierCase}
         onUpdateCase={handleUpdateCase}
+      />
+
+      {/* MODAL 8: Operations Lead & Field Agent Workspace (Option 1) */}
+      <OperatorWorkspaceModal
+        isOpen={isOperatorWorkspaceOpen}
+        onClose={() => setIsOperatorWorkspaceOpen(false)}
+        cases={activeCases}
+        onUpdateCase={handleUpdateCase}
+        onOpenDossierModal={handleOpenQuoteAndDossier}
       />
 
     </div>

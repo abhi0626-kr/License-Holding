@@ -10,7 +10,8 @@ import {
   Menu, 
   X,
   ExternalLink,
-  BookOpen
+  BookOpen,
+  Briefcase
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -19,6 +20,7 @@ interface NavbarProps {
   onOpenAI: () => void;
   onOpenDashboard: () => void;
   onOpenAdmin: () => void;
+  onOpenOperatorWorkspace?: () => void;
   savedCount: number;
   remindersCount: number;
   activeCasesCount?: number;
@@ -30,6 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAI,
   onOpenDashboard,
   onOpenAdmin,
+  onOpenOperatorWorkspace,
   savedCount,
   remindersCount,
   activeCasesCount = 0,
@@ -121,6 +124,23 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </button>
 
+            {/* Operator Desk / Field Agent Console */}
+            {onOpenOperatorWorkspace && (
+              <button
+                onClick={onOpenOperatorWorkspace}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors whitespace-nowrap shrink-0 shadow-xs"
+                title="Operations Lead & Field Agent Dispatch Console"
+              >
+                <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Operator Desk</span>
+                {activeCasesCount > 0 && (
+                  <span className="ml-0.5 px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-indigo-600 text-white">
+                    {activeCasesCount}
+                  </span>
+                )}
+              </button>
+            )}
+
             {/* Admin Panel Link */}
             <button
               onClick={onOpenAdmin}
@@ -189,6 +209,24 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               )}
             </button>
+            {onOpenOperatorWorkspace && (
+              <button
+                onClick={() => {
+                  onOpenOperatorWorkspace();
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200"
+              >
+                <span className="flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-indigo-600" /> Operator Desk & Agent Console
+                </span>
+                {activeCasesCount > 0 && (
+                  <span className="px-2 py-0.5 bg-indigo-600 text-white text-xs font-bold rounded-full">
+                    {activeCasesCount}
+                  </span>
+                )}
+              </button>
+            )}
             <button
               onClick={() => {
                 onOpenAdmin();

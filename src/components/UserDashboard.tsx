@@ -21,7 +21,8 @@ import {
   Copy,
   Check,
   MapPin,
-  IndianRupee
+  IndianRupee,
+  Briefcase
 } from 'lucide-react';
 
 interface UserDashboardProps {
@@ -39,6 +40,7 @@ interface UserDashboardProps {
   onOpenAssistanceModal?: (licence?: LicenceRecord) => void;
   onStartVerification?: (caseItem: AssistanceCase) => void;
   onOpenQuoteAndDossier?: (caseItem: AssistanceCase) => void;
+  onOpenOperatorWorkspace?: () => void;
 }
 
 export const UserDashboard: React.FC<UserDashboardProps> = ({
@@ -56,6 +58,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   onOpenAssistanceModal,
   onStartVerification,
   onOpenQuoteAndDossier,
+  onOpenOperatorWorkspace,
 }) => {
   const [activeTab, setActiveTab] = useState<'cases' | 'saved' | 'reminders' | 'new-reminder'>(
     activeCases.length > 0 ? 'cases' : 'saved'
@@ -206,6 +209,20 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {onOpenOperatorWorkspace && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenOperatorWorkspace();
+                }}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold rounded-lg transition-colors shadow-xs"
+                title="Open Operations Lead and Field Agent Dispatch Workspace"
+              >
+                <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Operator Desk</span>
+              </button>
+            )}
+
             <button
               onClick={() => onOpenAssistanceModal?.()}
               className="inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs font-semibold rounded-lg transition-all shadow-xs"
@@ -332,6 +349,36 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                             </div>
                           </div>
                         </div>
+
+                        {/* Operator & Agent Status banner if assigned or ARN filed */}
+                        {(c.assignedAgentName || c.govtReferenceNumber) && (
+                          <div className="p-2.5 bg-indigo-50/70 border border-indigo-200/80 rounded-lg text-xs flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 text-indigo-950 font-medium">
+                              <Briefcase className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                              {c.assignedAgentName && (
+                                <span>Assigned Agent: <strong className="font-semibold text-indigo-900">{c.assignedAgentName}</strong></span>
+                              )}
+                              {c.govtReferenceNumber && (
+                                <>
+                                  <span>·</span>
+                                  <span>Official ARN: <strong className="font-mono text-emerald-800 font-bold">{c.govtReferenceNumber}</strong></span>
+                                </>
+                              )}
+                            </div>
+                            {onOpenOperatorWorkspace && (
+                              <button
+                                onClick={() => {
+                                  onClose();
+                                  onOpenOperatorWorkspace();
+                                }}
+                                className="text-[11px] font-semibold text-indigo-700 hover:text-indigo-900 hover:underline inline-flex items-center gap-1"
+                              >
+                                <span>Open Operator Desk</span>
+                                <ArrowRight className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        )}
 
                         {/* Bottom Row: Checkpoints & Next Action */}
                         <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">

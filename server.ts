@@ -679,6 +679,129 @@ app.post('/api/agent/generate-dossier', (req, res) => {
   }
 });
 
+// Option 1: Operations Lead & Field Agent Workspace APIs
+const verifiedAgentsList = [
+  {
+    id: 'AGT-KA-001',
+    name: 'Suresh N. Gowda',
+    phone: '9845123981',
+    email: 'suresh.gowda@licenceholding.in',
+    district: 'Bengaluru Urban',
+    specializations: ['driving-transport', 'citizen-certificates'],
+    rating: 4.9,
+    activeCasesCount: 3,
+    completedCasesCount: 142,
+    status: 'Active',
+    badge: 'Senior Parivahan & RTO Coordinator',
+  },
+  {
+    id: 'AGT-KA-002',
+    name: 'Meenakshi Rao',
+    phone: '9740592812',
+    email: 'meenakshi.rao@licenceholding.in',
+    district: 'Bengaluru Urban',
+    specializations: ['food-restaurant', 'business-company'],
+    rating: 4.8,
+    activeCasesCount: 2,
+    completedCasesCount: 98,
+    status: 'Active',
+    badge: 'FSSAI & FoSCoS Regulatory Specialist',
+  },
+  {
+    id: 'AGT-KA-003',
+    name: 'Vinay Kumar Hegde',
+    phone: '9448102934',
+    email: 'vinay.hegde@licenceholding.in',
+    district: 'Mysuru',
+    specializations: ['business-company', 'factory-industrial', 'construction-property'],
+    rating: 4.9,
+    activeCasesCount: 1,
+    completedCasesCount: 115,
+    status: 'Active',
+    badge: 'Corporate & Municipal Licensing Lead',
+  },
+  {
+    id: 'AGT-KA-004',
+    name: 'Pooja K. Shetty',
+    phone: '9880194821',
+    email: 'pooja.shetty@licenceholding.in',
+    district: 'Dakshina Kannada (Mangaluru)',
+    specializations: ['healthcare-medical', 'import-export-logistics', 'tourism-entertainment'],
+    rating: 4.7,
+    activeCasesCount: 1,
+    completedCasesCount: 64,
+    status: 'Active',
+    badge: 'Medical & Commercial Permits Specialist',
+  },
+];
+
+app.get('/api/agents', (req, res) => {
+  res.json({ agents: verifiedAgentsList });
+});
+
+// Operations Lead: Assign Case to Field Agent
+app.post('/api/cases/:id/assign', (req, res) => {
+  const { agentId, agentName } = req.body;
+  const foundCase = assistanceCases.find((c) => c.id === req.params.id);
+  if (!foundCase) {
+    return res.status(404).json({ error: 'Case not found' });
+  }
+
+  foundCase.assignedAgentId = agentId;
+  foundCase.assignedAgentName = agentName;
+  foundCase.assignedAt = new Date().toISOString();
+  if (foundCase.status === 'initialized' || foundCase.status === 'documents_verified' || foundCase.status === 'quoted') {
+    foundCase.status = 'assigned';
+  }
+  foundCase.updatedAt = new Date().toISOString();
+
+  console.log(`[OpsLead] Assigned case ${foundCase.id} to agent ${agentName} (${agentId})`);
+  return res.json({ success: true, case: foundCase });
+});
+
+// Field Agent: Update Government Filing (Record ARN & Ack Slip)
+app.post('/api/cases/:id/update-filing', (req, res) => {
+  const { govtReferenceNumber, govtAckReceiptName, govtAckReceiptData, status, operatorMilestones } = req.body;
+  const foundCase = assistanceCases.find((c) => c.id === req.params.id);
+  if (!foundCase) {
+    return res.status(404).json({ error: 'Case not found' });
+  }
+
+  if (govtReferenceNumber) {
+    foundCase.govtReferenceNumber = govtReferenceNumber;
+    foundCase.govtSubmissionDate = new Date().toISOString();
+  }
+  if (govtAckReceiptName) {
+    foundCase.govtAckReceiptName = govtAckReceiptName;
+  }
+  if (govtAckReceiptData) {
+    foundCase.govtAckReceiptData = govtAckReceiptData;
+  }
+  if (status) {
+    foundCase.status = status;
+  }
+  if (operatorMilestones) {
+    foundCase.operatorMilestones = operatorMilestones;
+  }
+  foundCase.updatedAt = new Date().toISOString();
+
+  console.log(`[FieldAgent] Updated filing for case ${foundCase.id}: ARN=${foundCase.govtReferenceNumber}, Status=${foundCase.status}`);
+  return res.json({ success: true, case: foundCase });
+});
+
+// Operations Lead: Save Internal Review Notes
+app.post('/api/cases/:id/review-notes', (req, res) => {
+  const { opsReviewNotes } = req.body;
+  const foundCase = assistanceCases.find((c) => c.id === req.params.id);
+  if (!foundCase) {
+    return res.status(404).json({ error: 'Case not found' });
+  }
+
+  foundCase.opsReviewNotes = opsReviewNotes || '';
+  foundCase.updatedAt = new Date().toISOString();
+  return res.json({ success: true, case: foundCase });
+});
+
 // Setup dev server or static file serving
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {

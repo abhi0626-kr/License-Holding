@@ -269,6 +269,30 @@ export interface ApplicationDossier {
   operatorInstructions: string;
 }
 
+export type UserRole = 'customer' | 'field_agent' | 'operations_lead';
+
+export interface VerifiedAgent {
+  id: string; // e.g. "AGT-KA-001"
+  name: string;
+  phone: string;
+  email: string;
+  district: string; // e.g. "Bengaluru Urban"
+  specializations: LicenceCategory[];
+  rating: number; // e.g. 4.9
+  activeCasesCount: number;
+  completedCasesCount: number;
+  status: 'Active' | 'On Leave' | 'Pending Verification';
+  badge: string; // e.g. "Senior Transport Specialist"
+}
+
+export interface OperatorMilestone {
+  id: string;
+  title: string;
+  completed: boolean;
+  completedAt?: string;
+  completedBy?: string;
+}
+
 export interface AssistanceCase {
   id: string; // e.g. "CASE-KA-DL-1042"
   licenceId: string;
@@ -289,6 +313,15 @@ export interface AssistanceCase {
   notes?: string;
   quote?: CaseQuote;
   dossier?: ApplicationDossier;
+  assignedAgentId?: string;
+  assignedAgentName?: string;
+  assignedAt?: string;
+  govtReferenceNumber?: string; // Official Government ARN e.g. "DL-KA01-2026-90421"
+  govtAckReceiptName?: string;
+  govtAckReceiptData?: string;
+  govtSubmissionDate?: string;
+  opsReviewNotes?: string;
+  operatorMilestones?: OperatorMilestone[];
   confirmedCheckpoints: {
     nameMatchesAadhaar: boolean;
     acknowledgedGovtAuthority: boolean;
